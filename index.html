@@ -1,0 +1,324 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jameer AI</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #101827;
+    color: white;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: #172338;
+    padding: 18px;
+    text-align: center;
+    border-bottom: 1px solid #34445c;
+}
+
+header h1 {
+    color: #38bdf8;
+    font-size: 25px;
+}
+
+header p {
+    color: #aab8cc;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+#chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message {
+    max-width: 85%;
+    padding: 13px 16px;
+    border-radius: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.user {
+    background: #087db9;
+    align-self: flex-end;
+}
+
+.bot {
+    background: #243349;
+    align-self: flex-start;
+}
+
+.welcome {
+    text-align: center;
+    margin: auto;
+    color: #d1dbea;
+}
+
+.welcome h2 {
+    color: #38bdf8;
+    margin-bottom: 10px;
+}
+
+.input-area {
+    background: #172338;
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+input {
+    flex: 1;
+    padding: 14px;
+    border-radius: 25px;
+    border: 1px solid #52647e;
+    outline: none;
+    background: #26374e;
+    color: white;
+    font-size: 15px;
+    min-width: 0;
+}
+
+button {
+    background: #0284c7;
+    color: white;
+    border: none;
+    padding: 0 22px;
+    border-radius: 25px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+footer {
+    text-align: center;
+    padding: 8px;
+    background: #172338;
+    color: #8999ae;
+    font-size: 11px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>✨ Jameer AI</h1>
+    <p>Your Personal AI Assistant</p>
+</header>
+
+<div id="chat">
+
+    <div class="welcome" id="welcome">
+        <h2>Welcome to Jameer AI!</h2>
+        <p>Ask me anything. I'm here to help you.</p>
+    </div>
+
+</div>
+
+<div class="input-area">
+
+    <input
+        type="text"
+        id="question"
+        placeholder="Ask anything..."
+        autocomplete="off"
+    >
+
+    <button id="sendBtn" onclick="sendMessage()">
+        Send
+    </button>
+
+</div>
+
+<footer>
+    Powered by OpenAI API | Jameer AI
+</footer>
+
+<script>
+
+// ==================================
+// YOUR OPENAI API KEY
+// ==================================
+
+const API_KEY ="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";
+
+// ==================================
+// AI SETTINGS
+// ==================================
+
+const API_URL = "https://api.openai.com/v1/responses";
+
+const MODEL = "gpt-4.1-mini";
+
+let conversation = [];
+
+const chat = document.getElementById("chat");
+const questionInput = document.getElementById("question");
+const sendBtn = document.getElementById("sendBtn");
+
+// ==================================
+// DISPLAY MESSAGE
+// ==================================
+
+function addMessage(text, type) {
+
+    const welcome = document.getElementById("welcome");
+
+    if (welcome) {
+        welcome.remove();
+    }
+
+    const message = document.createElement("div");
+
+    message.className = "message " + type;
+    message.textContent = text;
+
+    chat.appendChild(message);
+
+    chat.scrollTop = chat.scrollHeight;
+
+    return message;
+}
+
+// ==================================
+// SEND QUESTION TO OPENAI
+// ==================================
+
+async function sendMessage() {
+
+    const question = questionInput.value.trim();
+
+    if (!question) return;
+
+    if (API_KEY === "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") {
+        addMessage("Please add your OpenAI API key first.", "bot");
+        return;
+    }
+
+    addMessage(question, "user");
+
+    questionInput.value = "";
+
+    sendBtn.disabled = true;
+
+    const loading = addMessage("Jameer AI is thinking...", "bot");
+
+    conversation.push({
+        role: "user",
+        content: question
+    });
+
+    try {
+
+        const response = await fetch(API_URL, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + API_KEY
+            },
+
+            body: JSON.stringify({
+
+                model: MODEL,
+
+                instructions: "You are Jameer AI, a helpful and friendly AI assistant. Answer user questions clearly and accurately.",
+
+                input: conversation,
+
+                max_output_tokens: 1500
+
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error?.message || "API request failed."
+            );
+        }
+
+        let answer = "";
+
+        if (data.output) {
+            for (const item of data.output) {
+                if (item.type === "message") {
+                    for (const content of item.content || []) {
+                        if (content.type === "output_text") {
+                            answer += content.text;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!answer) {
+            answer = "Sorry, I could not get an answer.";
+        }
+
+        loading.textContent = answer;
+
+        conversation.push({
+            role: "assistant",
+            content: answer
+        });
+
+    } catch (error) {
+
+        loading.textContent = "Error: " + error.message;
+
+        conversation.pop();
+
+    }
+
+    sendBtn.disabled = false;
+
+    questionInput.focus();
+
+    chat.scrollTop = chat.scrollHeight;
+
+}
+
+// ==================================
+// ENTER KEY SUPPORT
+// ==================================
+
+questionInput.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
